@@ -1,0 +1,149 @@
+# $language = "VBScript"
+
+# $interface = "1.0"
+
+ 
+
+'Written by: Alexander M. Meyers 
+
+'Last Edited: 3/19/2019 11:13PM
+
+'Version 1.0
+
+Dim wShell
+
+Dim oExec
+
+Dim sFileSelected
+
+Dim filename
+
+Dim filenameposition
+
+Dim confirmresult
+
+ 
+
+Sub Main
+
+ 
+
+ 
+
+ 
+
+ 
+
+'we use the Microsoft HTML Applications executable available on all MS installs to run an
+
+'activeX object which allows us to request a file browser pop up to search the file system
+
+'for our file to transfer.
+
+Do
+
+Set wShell=CreateObject("WScript.Shell")
+
+Set oExec=wShell.Exec("mshta.exe ""about:<input type=file id=FILE> <title> Select a file to transfer </title> <script>FILE.click(); new ActiveXObject('Scripting.FileSystemObject').GetStandardStream(1).WriteLine(FILE.value);close();resizeTo(0,0);</script>""")
+
+sFileSelected = oExec.StdOut.ReadLine
+
+ 
+
+'from the provided path, we parse out our file name and then pass this to the xmodem string to copy
+
+filenameposition = InStrRev ( sFileSelected, "\", -1, vbTextCompare)
+
+filenameposition = filenameposition
+
+filenameposition = Len(sFileSelected) - filenameposition
+
+filename = Right ( sFileSelected, filenameposition )
+
+ 
+
+If StrComp(filename,"") = 0 Then
+
+'do nothing
+
+Else
+
+confirmresult = MsgBox ("Are you sure this is the file you want to transfer? " & vbCr & "File Name: " & filename & vbCr & "File path: " & sFileSelected, vbYesNoCancel, " Confirm")
+
+End If
+
+Loop Until (confirmresult <> vbNo or StrComp(filename,"") = 0)
+
+ 
+
+'this is the part where having a box to test with will come in handy
+
+'but for the time being we're just using the sample code provided by
+
+'the devs of SecureCRT
+
+'This is commented out for testing purposes at the moment.
+
+ 
+
+If confirmresult = vbYes Then
+
+ 
+
+'All that is left is getting some same text of the output that would come from
+
+'a router of ours that we'd be running this command on, and we're good.
+
+'The ISR4000 series doesnt support XMODEM, so we will need to use an alternate means of transfer for
+
+'newer devices. There is a different script for this that will be provided with this one to enable you to do this.
+
+ 
+
+ 
+
+crt.Screen.Send "copy xmodem: flash:" & vbCR
+
+crt.Screen.WaitForString "Proceed?", 10, True
+
+crt.Screen.Send vbCR
+
+crt.Screen.WaitForString "Source", 5, True
+
+crt.Screen.Send filename & vbCR
+
+crt.Screen.WaitForString "crc", 5, True
+
+crt.Screen.Send "n" & vbCR
+
+crt.Screen.WaitForString "Max Retry", 5, True
+
+crt.Screen.Send vbCR
+
+crt.Screen.WaitForString "Perform image", 5, True
+
+crt.Screen.Send "n" & vbCR
+
+crt.Screen.WaitForString "Continue?", 5, True
+
+crt.Screen.Send "y" & vbCR
+
+crt.Screen.WaitForString "Ready to receive", 10, True
+
+crt.FileTransfer.SendXmodem sFileSelected
+
+ 
+
+Else
+
+ 
+
+'do nothing, because the user cancelled.
+
+ 
+
+End If
+
+ 
+
+End Sub
